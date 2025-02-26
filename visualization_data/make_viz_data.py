@@ -7,6 +7,7 @@ import os
 # link to Observable notebook containing visualizations: https://observablehq.com/d/2771aea511c0615e
 
 names = ['blues', 'classical','country','disco','hiphop','jazz','metal','pop','reggae','rock']
+corr_threshold = 0.75
 
 for x in names:
     # Read in node and edge lists from networks folder
@@ -15,6 +16,9 @@ for x in names:
     read_path_node = base_path + "/networks/'{a}'_node_list.csv".format(a=x)
     edge_list = pd.read_csv(read_path_edge).rename(columns={"Node1": "source", "Node2": "target"})
     node_list = pd.read_csv(read_path_node).rename(columns={"Node": "node_id"})
+
+    # Keeping only edges that have a correlation threshold higher than 0.75:
+    edge_list = edge_list.loc[edge_list['Correlation'] >= 0.75,:]
 
     # make the graph using edge list and node list data
     graph = nx.from_pandas_edgelist(edge_list, source="source", target="target", edge_attr=True, create_using=nx.Graph)
@@ -38,7 +42,7 @@ for x in names:
     nodes_side = nodes_side.rename(columns={'Y': 'x', 'Z': 'y', 'node_id': 'id', 'betweenness' : 'r'})
 
     # making a folder for each genre and writing the updated node and edge lists there.
-    os.mkdir(base_path + "/visualization_data/{a}".format(a=x))
+    # os.mkdir(base_path + "/visualization_data/{a}".format(a=x))
 
     write_path_node = base_path + "/visualization_data/{a}/{a}_nodes_viz.csv".format(a=x)
     write_path_side = base_path + "/visualization_data/{a}/{a}_nodes_side_view_viz.csv".format(a=x)
