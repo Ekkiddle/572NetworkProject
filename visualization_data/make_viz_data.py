@@ -20,6 +20,8 @@ for x in names:
     # Keeping only edges that have a correlation threshold higher than 0.75:
     edge_list = edge_list.loc[edge_list['Correlation'] >= 0.75,:]
 
+    region_names = pd.read_csv(base_path + "/visualization_data/region_names.csv")
+
     # make the graph using edge list and node list data
     graph = nx.from_pandas_edgelist(edge_list, source="source", target="target", edge_attr=True, create_using=nx.Graph)
     graph.add_nodes_from([(dict(d)['node_id'], dict(d)) for _, d in node_list.iterrows()])
@@ -27,8 +29,13 @@ for x in names:
     #calculate betweenness centrality for each node and add it to the node list
     centrality = nx.betweenness_centrality(graph)
     node_list['betweenness'] = 0.
+    node_list['region_name'] = ''
     for _, row in node_list.iterrows():
         node_list.loc[node_list['node_id'] == row['node_id'], 'betweenness'] = centrality[row['node_id']]
+        # Add column to nodes that has more descriptive region names
+        print(type(region_names.loc[region_names['Region'] == row['Region'], 'region_name']))
+        node_list.loc[node_list['node_id'] == row['node_id'], 'region_name'] = region_names.loc[region_names['Region'] == row['Region'], 'region_name'].values[0]
+
 
     nodes_side = node_list.copy(deep=True)
 
