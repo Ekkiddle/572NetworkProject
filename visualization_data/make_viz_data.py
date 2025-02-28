@@ -1,13 +1,14 @@
 import pandas as pd
 import networkx as nx
 import os
+import numpy as np
 
 # This script formats the node and edge lists in the networks folder to allow for visualization in d3. It also
 # calculates the betweenness centrality for each node and adds it to the node list.
 # link to Observable notebook containing visualizations: https://observablehq.com/d/2771aea511c0615e
 
 names = ['blues', 'classical','country','disco','hiphop','jazz','metal','pop','reggae','rock']
-corr_threshold = 0.75
+corr_threshold = 0.7
 
 for x in names:
     # Read in node and edge lists from networks folder
@@ -17,8 +18,8 @@ for x in names:
     edge_list = pd.read_csv(read_path_edge).rename(columns={"Node1": "source", "Node2": "target"})
     node_list = pd.read_csv(read_path_node).rename(columns={"Node": "node_id"})
 
-    # Keeping only edges that have a correlation threshold higher than 0.75:
-    edge_list = edge_list.loc[edge_list['Correlation'] >= 0.75,:]
+    # Keeping only edges that have a correlation threshold higher than 0.7:
+    edge_list = edge_list.loc[edge_list['Correlation'] >= corr_threshold,:]
 
     region_names = pd.read_csv(base_path + "/visualization_data/region_names.csv")
 
@@ -30,12 +31,11 @@ for x in names:
     centrality = nx.betweenness_centrality(graph)
     node_list['betweenness'] = 0.
     node_list['region_name'] = ''
-    for _, row in node_list.iterrows():
+    for i, row in node_list.iterrows():
         node_list.loc[node_list['node_id'] == row['node_id'], 'betweenness'] = centrality[row['node_id']]
         # Add column to nodes that has more descriptive region names
         print(type(region_names.loc[region_names['Region'] == row['Region'], 'region_name']))
-        node_list.loc[node_list['node_id'] == row['node_id'], 'region_name'] = region_names.loc[region_names['Region'] == row['Region'], 'region_name'].values[0]
-
+        node_list.loc[i, 'region_name'] = region_names.loc[region_names['Region'] == row['Region'], 'region_name'].values[0]
 
     nodes_side = node_list.copy(deep=True)
 
@@ -43,10 +43,10 @@ for x in names:
     # renaming betweenness as r because betweenness centrality will be used to determine the size of the circle
     # in the visualization. Also, the force simulations in d3 need a column called r to determine the radius of the
     # collision force for each node.
-    node_list = node_list.rename(columns={'X': 'x', 'Y': 'y', 'node_id': 'id', 'betweenness' : 'r'})
+    node_list = node_list.rename(columns={'X': 'x', 'Y': 'y', 'node_id': 'id', 'betweenness' : 'r'}).drop(columns=['Z'])
     # using X and Y columns gives us a top down view of the brain, so using Y and Z as the horizontal and vertical positions, 
     # respectively, in d3 should give us the side view
-    nodes_side = nodes_side.rename(columns={'Y': 'x', 'Z': 'y', 'node_id': 'id', 'betweenness' : 'r'})
+    nodes_side = nodes_side.rename(columns={'Y': 'x', 'Z': 'y', 'node_id': 'id', 'betweenness' : 'r'}).drop(columns=['X'])
 
     # making a folder for each genre and writing the updated node and edge lists there.
     # os.mkdir(base_path + "/visualization_data/{a}".format(a=x))
