@@ -8,7 +8,6 @@ import numpy as np
 # link to Observable notebook containing visualizations: https://observablehq.com/d/2771aea511c0615e
 
 names = ['blues', 'classical','country','disco','hiphop','jazz','metal','pop','reggae','rock']
-corr_threshold = 0.7
 
 for x in names:
     # Read in node and edge lists from networks folder
@@ -18,8 +17,8 @@ for x in names:
     edge_list = pd.read_csv(read_path_edge).rename(columns={"Node1": "source", "Node2": "target"})
     node_list = pd.read_csv(read_path_node).rename(columns={"Node": "node_id"})
 
-    # Keeping only edges that have a correlation threshold higher than 0.7:
-    edge_list = edge_list.loc[edge_list['Correlation'] >= corr_threshold,:]
+    # Keeping only the top 500 edges with the highest correlation
+    edge_list = edge_list.sort_values(by='Correlation', ascending=False).iloc[:500,:]
 
     region_names = pd.read_csv(base_path + "/visualization_data/region_names.csv")
 
@@ -34,7 +33,6 @@ for x in names:
     for i, row in node_list.iterrows():
         node_list.loc[node_list['node_id'] == row['node_id'], 'betweenness'] = centrality[row['node_id']]
         # Add column to nodes that has more descriptive region names
-        print(type(region_names.loc[region_names['Region'] == row['Region'], 'region_name']))
         node_list.loc[i, 'region_name'] = region_names.loc[region_names['Region'] == row['Region'], 'region_name'].values[0]
 
     nodes_side = node_list.copy(deep=True)
