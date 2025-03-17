@@ -1,0 +1,12 @@
+Graph,Degree Centrality,Betweenness Centrality,Eigenvector Centrality,Closeness Centrality
+blues,313,11,313,417
+classical,398,11,398,535
+country,313,467,313,39
+disco,185,533,392,503
+hiphop,392,361,392,392
+jazz,395,533,395,533
+metal,313,102,313,573
+null,313,108,313,313
+pop,395,221,395,3
+reggae,313,11,313,428
+rock,404,297,404,395
