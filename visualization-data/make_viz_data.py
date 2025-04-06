@@ -25,6 +25,11 @@ def getNetworkName(s:str):
             return network_names[substr]
     raise ValueError('Network name not found')
 
+vis_edges = pd.DataFrame(columns=['source', 'target', 'Correlation', 'genre'])
+vis_nodes_top_view = pd.DataFrame(columns=['id','Label','Network','Hemisphere','Region','Parcel ID','x','y','degree_centrality','r','eigenvector_centrality','closeness_centrality','region_name','network_name', 'genre'])
+vis_nodes_side_view = pd.DataFrame(columns=['id','Label','Network','Hemisphere','Region','Parcel ID','x','y','degree_centrality','r','eigenvector_centrality','closeness_centrality','region_name','network_name', 'genre'])
+region_names = pd.read_csv("./region_names.csv")
+
 for genre in genres:
     # Read in node and edge lists from networks folder
     # base_path = os.getcwd()
@@ -36,7 +41,6 @@ for genre in genres:
     # Keeping all edges now to allow visualizing whole network
     # edge_list = edge_list.sort_values(by='Correlation', ascending=False).iloc[:500,:]
 
-    region_names = pd.read_csv("./region_names.csv")
 
     # make the graph using edge list and node list data
     # graph = nx.from_pandas_edgelist(edge_list, source="source", target="target", edge_attr=True, create_using=nx.Graph)
@@ -64,13 +68,25 @@ for genre in genres:
     # respectively, in d3 should give us the side view
     nodes_side = nodes_side.rename(columns={'Y': 'x', 'Z': 'y', 'node_id': 'id', 'betweenness_centrality' : 'r'}).drop(columns=['X'])
 
+    # Uncomment these lines if you want a seperate file for each genre
     # making a folder for each genre and writing the updated node and edge lists there.
     # os.mkdir(base_path + "/visualization-data/{a}".format(a=x))
+    # write_path_node = f"./{genre}/{genre}_nodes_viz.csv"
+    # write_path_side = f"./{genre}/{genre}_nodes_side_view_viz.csv"
+    # write_path_edges =f"./{genre}/{genre}_edges_viz.csv"
+    #
+    # node_list.to_csv(write_path_node, index=False)
+    # nodes_side.to_csv(write_path_side, index=False)
+    # edge_list.to_csv(write_path_edges, index=False)
 
-    write_path_node = f"./{genre}/{genre}_nodes_viz.csv"
-    write_path_side = f"./{genre}/{genre}_nodes_side_view_viz.csv"
-    write_path_edges =f"./{genre}/{genre}_edges_viz.csv"
+    node_list['genre'] = genre
+    nodes_side['genre'] = genre
+    edge_list['genre'] = genre
 
-    node_list.to_csv(write_path_node, index=False)
-    nodes_side.to_csv(write_path_side, index=False)
-    edge_list.to_csv(write_path_edges, index=False)
+    vis_edges = pd.concat([vis_edges, edge_list], ignore_index=True)
+    vis_nodes_top_view = pd.concat([vis_nodes_top_view, node_list], ignore_index=True)
+    vis_nodes_side_view = pd.concat([vis_nodes_side_view, nodes_side], ignore_index=True)
+
+vis_edges.to_csv('vis_edges.csv', index=False)
+vis_nodes_top_view.to_csv('vis_nodes_top_view.csv', index=False)
+vis_nodes_side_view.to_csv('vis_nodes_side_view.csv', index=False)
