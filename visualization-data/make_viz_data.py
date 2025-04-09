@@ -28,6 +28,7 @@ def getNetworkName(s:str):
 vis_edges = pd.DataFrame(columns=['source', 'target', 'Correlation', 'genre'])
 vis_nodes_top_view = pd.DataFrame(columns=['id','Label','Network','Hemisphere','Region','Parcel ID','x','y','degree_centrality','r','eigenvector_centrality','closeness_centrality','region_name','network_name', 'genre'])
 vis_nodes_side_view = pd.DataFrame(columns=['id','Label','Network','Hemisphere','Region','Parcel ID','x','y','degree_centrality','r','eigenvector_centrality','closeness_centrality','region_name','network_name', 'genre'])
+vis_nodes_rich_club = pd.DataFrame(columns=['id','Label','Network','Hemisphere','Region','Parcel ID','x','y','degree_centrality','betweenness_centrality','eigenvector_centrality','closeness_centrality','region_name','network_name', 'genre', 'r'])
 region_names = pd.read_csv("./region_names.csv")
 
 for genre in genres:
@@ -43,8 +44,8 @@ for genre in genres:
 
 
     # make the graph using edge list and node list data
-    # graph = nx.from_pandas_edgelist(edge_list, source="source", target="target", edge_attr=True, create_using=nx.Graph)
-    # graph.add_nodes_from([(dict(d)['node_id'], dict(d)) for _, d in node_list.iterrows()])
+    network = nx.from_pandas_edgelist(edge_list, source="source", target="target", edge_attr=True, create_using=nx.Graph)
+    network.add_nodes_from([(dict(d)['node_id'], dict(d)) for _, d in node_list.iterrows()])
 
     #calculate betweenness centrality for each node and add it to the node list
     # centrality = nx.betweenness_centrality(graph)
@@ -57,7 +58,18 @@ for genre in genres:
         node_list.loc[i, 'region_name'] = region_names.loc[region_names['Region'] == row['Region'], 'region_name'].values[0]
         node_list.loc[i, 'network_name'] = getNetworkName(row['Label'])
 
+
+
     nodes_side = node_list.copy(deep=True)
+    nodes_rich_club = node_list.copy(deep=True)
+    network_rc_coef = pd.read_csv(f"../rich-club/metrics/{genre}_dp_rc.csv")
+
+    degrees = network.degree()
+    nodes_rich_club['r'] = 0.
+    for n in network:
+        k = degrees[n]
+        nodes_rich_club.loc[node_list['node_id'] == n, 'r'] = np.mean(
+            network_rc_coef.loc[network_rc_coef['degree'] == k, 'normalized_rc_coefficient'])
 
     # rename columns, the force simulation functions in d3 will only work if it can find columns that have these names
     # renaming betweenness as r because betweenness centrality will be used to determine the size of the circle
@@ -67,6 +79,8 @@ for genre in genres:
     # using X and Y columns gives us a top down view of the brain, so using Y and Z as the horizontal and vertical positions, 
     # respectively, in d3 should give us the side view
     nodes_side = nodes_side.rename(columns={'Y': 'x', 'Z': 'y', 'node_id': 'id', 'betweenness_centrality' : 'r'}).drop(columns=['X'])
+
+    nodes_rich_club = nodes_rich_club.rename(columns={'X': 'x', 'Y': 'y', 'node_id': 'id'}).drop(columns=['Z'])
 
     # Uncomment these lines if you want a seperate file for each genre
     # making a folder for each genre and writing the updated node and edge lists there.
@@ -81,12 +95,16 @@ for genre in genres:
 
     node_list['genre'] = genre
     nodes_side['genre'] = genre
+    nodes_rich_club['genre'] = genre
     edge_list['genre'] = genre
+
 
     vis_edges = pd.concat([vis_edges, edge_list], ignore_index=True)
     vis_nodes_top_view = pd.concat([vis_nodes_top_view, node_list], ignore_index=True)
     vis_nodes_side_view = pd.concat([vis_nodes_side_view, nodes_side], ignore_index=True)
+    vis_nodes_rich_club = pd.concat([vis_nodes_rich_club, nodes_rich_club], ignore_index=True)
 
 vis_edges.to_csv('vis_edges.csv', index=False)
 vis_nodes_top_view.to_csv('vis_nodes_top_view.csv', index=False)
 vis_nodes_side_view.to_csv('vis_nodes_side_view.csv', index=False)
+vis_nodes_rich_club.to_csv('vis_nodes_rich_club.csv', index=False)
